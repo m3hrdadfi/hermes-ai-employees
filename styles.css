@@ -200,6 +200,7 @@ h2 { font-size: clamp(3rem, 5.8vw, 6.3rem); line-height: .93; letter-spacing: -.
 .final-cta small { position: relative; margin-top: 18px; color: #aaa79e; font: 300 10px var(--mono); }
 footer { min-height: 120px; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 25px; align-items: center; max-width: var(--max); margin: 0 auto; font: 300 9px/1.55 var(--mono); color: var(--muted); }
 footer p { margin: 0; text-align: center; }
+footer .brand b { opacity: 1; }
 footer p a { color: var(--ink); border-bottom: 1px solid var(--line); }
 footer > span { text-align: right; }
 
