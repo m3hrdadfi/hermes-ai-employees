@@ -15,9 +15,12 @@ Open `http://localhost:4173`.
 - Semantic HTML
 - Responsive CSS
 - Vanilla JavaScript
-- Canvas signal-field animation
+- Pointer-reactive canvas signal field
+- Interactive agent workflow simulator
+- Section-aware navigation and scroll progress
+- Magnetic CTAs, card tilt, orbit parallax, and booking dialog
 - Reduced-motion accessibility support
-- GitHub Pages deployment
+- here.now and GitHub Pages deployment
 
 ## Booking CTA
 

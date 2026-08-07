@@ -1,4 +1,7 @@
 *.png
 *.jpg
 lighthouse.json
+preview-*.html
+here-now-dist/
+.herenow/
 !assets/*.png
