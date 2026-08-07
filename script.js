@@ -211,9 +211,7 @@
   });
   $('[data-close-dialog]').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', (event) => {
-    const rect = dialog.getBoundingClientRect();
-    const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-    if (!inside) dialog.close();
+    if (event.target === dialog) dialog.close();
   });
   $$('[data-booking-options] button').forEach((button) => {
     button.addEventListener('click', () => {
