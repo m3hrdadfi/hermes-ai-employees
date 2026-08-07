@@ -1,0 +1,49 @@
+name: Book a build call
+description: Request a strategy call about a Hermes AI employee.
+title: "Build call request — "
+labels: ["build-call"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest. Share the workflow you want to delegate and we’ll use this to prepare for the call.
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      placeholder: Your name
+    validations:
+      required: true
+  - type: input
+    id: company
+    attributes:
+      label: Company or project
+      placeholder: Your company or project
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What should your AI employee own?
+      description: Describe the repetitive content, lead generation, or research workflow.
+      placeholder: Every week, we need to...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Primary outcome
+      options:
+        - Content production
+        - Lead generation
+        - Competitor intelligence
+        - A combined operating system
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Best contact method
+      description: Email, LinkedIn, or another way to reach you.
+    validations:
+      required: true
