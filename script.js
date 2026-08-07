@@ -64,11 +64,16 @@
       processProgress.style.width = `${value * 100}%`;
     }
 
-    let current = navSections[0];
+    let current = null;
     navSections.forEach((section) => {
       if (section.getBoundingClientRect().top <= window.innerHeight * 0.34) current = section;
     });
-    navLinks.forEach((link) => link.classList.toggle('active', current && link.hash === `#${current.id}`));
+    navLinks.forEach((link) => {
+      const active = Boolean(current && link.hash === `#${current.id}`);
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
     scrollFrame = null;
   };
 
@@ -167,7 +172,11 @@
   runButton.addEventListener('click', async () => {
     if (simulationRunning) return;
     simulationRunning = true;
+    const runRole = selectedRole;
+    const runOutput = selectedOutput;
+    const choiceButtons = $$('.lab-control .choice');
     runButton.disabled = true;
+    choiceButtons.forEach((button) => { button.disabled = true; });
     runButton.firstChild.textContent = 'Agent running ';
     consoleBox.classList.remove('complete');
     consoleMeter.style.width = '0%';
@@ -176,13 +185,13 @@
       line.classList.remove('running');
       $('em', line).textContent = index === 0 ? stageCopy[0] : 'Queued';
     });
-    consoleResult.textContent = `${selectedRole} is starting…`;
+    consoleResult.textContent = `${runRole} is starting…`;
 
     const delay = reduceMotion ? 60 : 430;
     for (let index = 1; index < consoleLines.length; index += 1) {
       const line = consoleLines[index];
       line.classList.add('running');
-      $('em', line).textContent = index === 1 ? `Researching for ${selectedOutput.toLowerCase()}` : 'Processing';
+      $('em', line).textContent = index === 1 ? `Researching for ${runOutput.toLowerCase()}` : 'Processing';
       consoleMeter.style.width = `${index * 20}%`;
       await new Promise((resolve) => window.setTimeout(resolve, delay));
       line.classList.remove('running');
@@ -191,10 +200,11 @@
     }
 
     consoleMeter.style.width = '100%';
-    consoleResult.textContent = `${selectedOutput} ready for human review`;
+    consoleResult.textContent = `${runOutput} ready for human review`;
     consoleBox.classList.add('complete');
     runButton.firstChild.textContent = 'Run again ';
     runButton.disabled = false;
+    choiceButtons.forEach((button) => { button.disabled = false; });
     simulationRunning = false;
   });
 

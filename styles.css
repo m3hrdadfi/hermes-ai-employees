@@ -129,6 +129,8 @@ h2 { font-size: clamp(3rem, 5.8vw, 6.3rem); line-height: .93; letter-spacing: -.
 .choice-row { display: flex; flex-wrap: wrap; gap: 7px; }
 .choice { min-height: 42px; padding: 0 13px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: 400 10px var(--mono); cursor: pointer; transition: background .2s ease,color .2s ease,transform .2s ease; }
 .choice:hover { transform: translateY(-2px); border-color: var(--ink); }
+.choice:disabled { cursor: progress; opacity: .42; transform: none; }
+.choice:disabled.active { opacity: .68; }
 .choice.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .lab-run { margin-top: 13px; cursor: pointer; }
 .lab-console { position: relative; min-height: 590px; padding: 19px; overflow: hidden; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); box-shadow: 16px 16px 0 rgba(16,16,15,.1); }
