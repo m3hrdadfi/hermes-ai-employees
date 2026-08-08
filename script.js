@@ -4,11 +4,29 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finePointer = window.matchMedia('(pointer:fine)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
 
   $('#year').textContent = new Date().getFullYear();
 
-  // Reveal content as it enters the viewport.
+  const main = $('#main');
+  $('.skip-link').addEventListener('click', (event) => {
+    event.preventDefault();
+    main.focus({ preventScroll: true });
+    main.scrollIntoView({ behavior: 'auto', block: 'start' });
+  });
+
+  const restoreHashPosition = () => {
+    if (!window.location.hash) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = document.getElementById(id);
+    if (!target) return;
+    window.requestAnimationFrame(() => target.scrollIntoView({ behavior: 'auto', block: 'start' }));
+  };
+
+  window.addEventListener('load', restoreHashPosition, { once: true });
+  window.addEventListener('hashchange', restoreHashPosition);
+  if (document.fonts?.ready) document.fonts.ready.then(restoreHashPosition);
+
   const reveals = $$('[data-reveal]');
   if (reduceMotion) {
     reveals.forEach((element) => element.classList.add('visible'));
@@ -19,18 +37,41 @@
         entry.target.classList.add('visible');
         revealObserver.unobserve(entry.target);
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -30px' });
+    }, { threshold: 0.14, rootMargin: '0px 0px -3% 0px' });
+
     reveals.forEach((element, index) => {
-      element.style.transitionDelay = `${Math.min(index % 4, 3) * 70}ms`;
+      element.style.transitionDelay = `${Math.min(index % 3, 2) * 70}ms`;
       revealObserver.observe(element);
     });
   }
 
-  // Hero status cycles through real workflow states.
+  const navLinks = $$('.nav-shell nav a');
+  const navSections = navLinks
+    .map((link) => $(link.getAttribute('href')))
+    .filter(Boolean);
+
+  const setActiveNavigation = (section) => {
+    navLinks.forEach((link) => {
+      const active = Boolean(section && link.hash === `#${section.id}`);
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+  };
+
+  const sectionObserver = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (visible) setActiveNavigation(visible.target);
+  }, { rootMargin: '-24% 0px -64% 0px', threshold: [0, .1, .25, .5] });
+
+  navSections.forEach((section) => sectionObserver.observe(section));
+
   const status = $('#live-status');
   const messages = [
     'Mapping competitor signals',
-    'Drafting three content angles',
+    'Drafting content angles',
     'Packaging creator briefs',
     'Qualifying lead opportunities',
     'Updating operating memory'
@@ -38,106 +79,47 @@
   let statusIndex = 0;
   if (!reduceMotion) {
     window.setInterval(() => {
-      status.animate([{ opacity: 1 }, { opacity: 0 }, { opacity: 1 }], { duration: 520 });
+      status.animate(
+        [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }],
+        { duration: 520, easing: 'cubic-bezier(.16,1,.3,1)' }
+      );
       statusIndex = (statusIndex + 1) % messages.length;
       window.setTimeout(() => { status.textContent = messages[statusIndex]; }, 250);
-    }, 2900);
+    }, 3200);
   }
 
-  // Page progress, section-aware navigation, and process progress share one scroll frame.
-  const pageProgress = $('.page-progress i');
-  const process = $('[data-process]');
-  const processProgress = $('.process-progress');
-  const navLinks = $$('.nav-shell nav a');
-  const navSections = navLinks.map((link) => $(link.getAttribute('href'))).filter(Boolean);
-  let scrollFrame = null;
-
-  const updateScrollUI = () => {
-    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-    pageProgress.style.width = `${scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0}%`;
-
-    if (process && processProgress) {
-      const rect = process.getBoundingClientRect();
-      const start = window.innerHeight * 0.78;
-      const end = window.innerHeight * 0.28;
-      const value = Math.max(0, Math.min(1, (start - rect.top) / (start - end + rect.height * 0.25)));
-      processProgress.style.width = `${value * 100}%`;
-    }
-
-    let current = null;
-    navSections.forEach((section) => {
-      if (section.getBoundingClientRect().top <= window.innerHeight * 0.34) current = section;
-    });
-    navLinks.forEach((link) => {
-      const active = Boolean(current && link.hash === `#${current.id}`);
-      link.classList.toggle('active', active);
-      if (active) link.setAttribute('aria-current', 'page');
-      else link.removeAttribute('aria-current');
-    });
-    scrollFrame = null;
-  };
-
-  window.addEventListener('scroll', () => {
-    if (!scrollFrame) scrollFrame = window.requestAnimationFrame(updateScrollUI);
-  }, { passive: true });
-  updateScrollUI();
-
-  // Tactile pointer interactions: magnetic CTAs, tilt cards, and a responsive agent orbit.
   if (!reduceMotion && finePointer) {
     $$('.magnetic').forEach((element) => {
-      element.addEventListener('mousemove', (event) => {
+      element.addEventListener('pointermove', (event) => {
         const rect = element.getBoundingClientRect();
-        const x = (event.clientX - rect.left - rect.width / 2) * 0.13;
-        const y = (event.clientY - rect.top - rect.height / 2) * 0.16;
-        element.style.transform = `translate(${x}px, ${y}px)`;
+        const x = (event.clientX - rect.left - rect.width / 2) * .12;
+        const y = (event.clientY - rect.top - rect.height / 2) * .15;
+        element.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       });
-      element.addEventListener('mouseleave', () => { element.style.transform = ''; });
+      element.addEventListener('pointerleave', () => { element.style.transform = ''; });
     });
 
-    $$('.output-card').forEach((card) => {
-      card.addEventListener('mousemove', (event) => {
-        const rect = card.getBoundingClientRect();
-        const rx = ((event.clientY - rect.top) / rect.height - 0.5) * -7;
-        const ry = ((event.clientX - rect.left) / rect.width - 0.5) * 7;
-        card.style.setProperty('--rx', `${rx}deg`);
-        card.style.setProperty('--ry', `${ry}deg`);
-      });
-      card.addEventListener('mouseleave', () => {
-        card.style.setProperty('--rx', '0deg');
-        card.style.setProperty('--ry', '0deg');
-      });
+    const heroArt = $('.hero-art-frame');
+    const heroImage = $('.hero-art img');
+    heroArt.addEventListener('pointermove', (event) => {
+      const rect = heroArt.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width - .5) * 18;
+      const y = ((event.clientY - rect.top) / rect.height - .5) * 18;
+      heroImage.style.transform = `translate(calc(-50% + ${x}px), calc(-49% + ${y}px))`;
     });
-
-    const orbit = $('.agent-orbit');
-    orbit.addEventListener('mousemove', (event) => {
-      const rect = orbit.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width - 0.5) * 13;
-      const y = ((event.clientY - rect.top) / rect.height - 0.5) * 13;
-      $('.agent-core', orbit).style.transform = `translate(${x}px, ${y}px)`;
-      $$('.orbit-node', orbit).forEach((node, index) => {
-        const depth = (index % 2 ? -1 : 1) * 0.55;
-        node.style.marginLeft = `${x * depth}px`;
-        node.style.marginTop = `${y * depth}px`;
-      });
-    });
-    orbit.addEventListener('mouseleave', () => {
-      $('.agent-core', orbit).style.transform = '';
-      $$('.orbit-node', orbit).forEach((node) => { node.style.margin = ''; });
-    });
+    heroArt.addEventListener('pointerleave', () => { heroImage.style.transform = ''; });
   }
 
-  // Interactive agent lab.
   let selectedRole = 'Content Operator';
   let selectedOutput = 'Carousel system';
   const selectedRoleLabel = $('[data-selected-role]');
   const selectedOutputLabel = $('[data-selected-output]');
   const runButton = $('[data-run-agent]');
-  const consoleBox = $('.lab-console');
+  const runtime = $('.lab-runtime');
   const consoleLines = $$('.console-line');
-  const consoleMeter = $('[data-console-meter]');
   const consoleResult = $('[data-console-result] strong');
   const stageCopy = [
-    'Brand memory ready',
+    'Brand context ready',
     'Public signals mapped',
     'Draft assembled',
     'Quality checks passed',
@@ -160,58 +142,57 @@
   bindChoices('[data-role-options]', (value) => {
     selectedRole = value;
     selectedRoleLabel.textContent = value;
-    consoleResult.textContent = 'Role updated — ready to run';
+    consoleResult.textContent = 'Role updated. Ready to run.';
   });
+
   bindChoices('[data-output-options]', (value) => {
     selectedOutput = value;
     selectedOutputLabel.textContent = value;
-    consoleResult.textContent = 'Output updated — ready to run';
+    consoleResult.textContent = 'Output updated. Ready to run.';
   });
 
   let simulationRunning = false;
   runButton.addEventListener('click', async () => {
     if (simulationRunning) return;
     simulationRunning = true;
+
     const runRole = selectedRole;
     const runOutput = selectedOutput;
     const choiceButtons = $$('.lab-control .choice');
+
     runButton.disabled = true;
     choiceButtons.forEach((button) => { button.disabled = true; });
     runButton.firstChild.textContent = 'Agent running ';
-    consoleBox.classList.remove('complete');
-    consoleMeter.style.width = '0%';
+    runtime.classList.remove('complete');
+
     consoleLines.forEach((line, index) => {
       line.classList.toggle('done', index === 0);
       line.classList.remove('running');
       $('em', line).textContent = index === 0 ? stageCopy[0] : 'Queued';
     });
-    consoleResult.textContent = `${runRole} is starting…`;
+    consoleResult.textContent = `${runRole} is starting.`;
 
-    const delay = reduceMotion ? 60 : 430;
+    const delay = reduceMotion ? 50 : 440;
     for (let index = 1; index < consoleLines.length; index += 1) {
       const line = consoleLines[index];
       line.classList.add('running');
       $('em', line).textContent = index === 1 ? `Researching for ${runOutput.toLowerCase()}` : 'Processing';
-      consoleMeter.style.width = `${index * 20}%`;
       await new Promise((resolve) => window.setTimeout(resolve, delay));
       line.classList.remove('running');
       line.classList.add('done');
       $('em', line).textContent = stageCopy[index];
     }
 
-    consoleMeter.style.width = '100%';
-    consoleResult.textContent = `${runOutput} ready for human review`;
-    consoleBox.classList.add('complete');
+    consoleResult.textContent = `${runOutput} ready for human review.`;
+    runtime.classList.add('complete');
     runButton.firstChild.textContent = 'Run again ';
     runButton.disabled = false;
     choiceButtons.forEach((button) => { button.disabled = false; });
     simulationRunning = false;
   });
 
-  // Booking dialog keeps every CTA useful while preserving a no-JS fallback.
   const dialog = $('.booking-dialog');
   const bookingContinue = $('[data-booking-continue]');
-  let bookingTopic = 'Content production';
   $$('[data-book-call]').forEach((link) => {
     link.addEventListener('click', (event) => {
       if (typeof dialog.showModal !== 'function') return;
@@ -219,23 +200,24 @@
       dialog.showModal();
     });
   });
+
   $('[data-close-dialog]').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
   });
+
   $$('[data-booking-options] button').forEach((button) => {
     button.addEventListener('click', () => {
-      bookingTopic = button.dataset.value;
+      const bookingTopic = button.dataset.value;
       $$('[data-booking-options] button').forEach((item) => {
         const active = item === button;
         item.classList.toggle('active', active);
         item.setAttribute('aria-pressed', String(active));
       });
-      bookingContinue.href = `https://github.com/m3hrdadfi/hermes-ai-employees/issues/new?template=book-a-call.yml&title=${encodeURIComponent(`Build call — ${bookingTopic}`)}`;
+      bookingContinue.href = `https://github.com/m3hrdadfi/hermes-ai-employees/issues/new?template=book-a-call.yml&title=${encodeURIComponent(`Build call - ${bookingTopic}`)}`;
     });
   });
 
-  // Pointer-reactive signal field.
   const canvas = $('#signal-field');
   const context = canvas.getContext('2d');
   const pointer = { x: -1000, y: -1000 };
@@ -246,7 +228,10 @@
     pointer.x = event.clientX;
     pointer.y = event.clientY;
   }, { passive: true });
-  document.addEventListener('pointerleave', () => { pointer.x = -1000; pointer.y = -1000; });
+  document.addEventListener('pointerleave', () => {
+    pointer.x = -1000;
+    pointer.y = -1000;
+  });
 
   const sizeCanvas = () => {
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -255,13 +240,13 @@
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const count = Math.min(42, Math.max(18, Math.floor(window.innerWidth / 34)));
+    const count = Math.min(40, Math.max(18, Math.floor(window.innerWidth / 38)));
     points = Array.from({ length: count }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.18,
-      vy: (Math.random() - 0.5) * 0.18,
-      r: Math.random() * 1.2 + 0.35
+      vx: (Math.random() - .5) * .14,
+      vy: (Math.random() - .5) * .14,
+      radius: Math.random() * .9 + .3
     }));
   };
 
@@ -269,29 +254,30 @@
     context.clearRect(0, 0, window.innerWidth, window.innerHeight);
     points.forEach((point, index) => {
       const pointerDistance = Math.hypot(point.x - pointer.x, point.y - pointer.y);
-      if (pointerDistance < 130 && pointerDistance > 1) {
-        point.x += ((point.x - pointer.x) / pointerDistance) * 0.7;
-        point.y += ((point.y - pointer.y) / pointerDistance) * 0.7;
+      if (pointerDistance < 125 && pointerDistance > 1) {
+        point.x += ((point.x - pointer.x) / pointerDistance) * .58;
+        point.y += ((point.y - pointer.y) / pointerDistance) * .58;
       }
+
       point.x += point.vx;
       point.y += point.vy;
       if (point.x < -20 || point.x > window.innerWidth + 20) point.vx *= -1;
       if (point.y < -20 || point.y > window.innerHeight + 20) point.vy *= -1;
 
       context.beginPath();
-      context.arc(point.x, point.y, point.r, 0, Math.PI * 2);
-      context.fillStyle = 'rgba(16,16,15,.55)';
+      context.arc(point.x, point.y, point.radius, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(198, 213, 202, .52)';
       context.fill();
 
       for (let next = index + 1; next < points.length; next += 1) {
         const other = points[next];
         const distance = Math.hypot(point.x - other.x, point.y - other.y);
-        if (distance < 145) {
+        if (distance < 150) {
           context.beginPath();
           context.moveTo(point.x, point.y);
           context.lineTo(other.x, other.y);
-          context.strokeStyle = `rgba(16,16,15,${(1 - distance / 145) * 0.14})`;
-          context.lineWidth = 0.6;
+          context.strokeStyle = `rgba(198, 213, 202, ${(1 - distance / 150) * .13})`;
+          context.lineWidth = .6;
           context.stroke();
         }
       }
@@ -301,10 +287,17 @@
 
   sizeCanvas();
   if (!reduceMotion) drawField();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      window.cancelAnimationFrame(frame);
+      frame = null;
+      return;
+    }
+    if (!reduceMotion && !frame) drawField();
+  });
   window.addEventListener('resize', () => {
     window.cancelAnimationFrame(frame);
     sizeCanvas();
-    updateScrollUI();
     if (!reduceMotion) drawField();
   }, { passive: true });
 })();

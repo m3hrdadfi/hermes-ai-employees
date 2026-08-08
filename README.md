@@ -13,12 +13,13 @@ Open `http://localhost:4173`.
 ## Stack
 
 - Semantic HTML
-- Responsive CSS
+- TasteSkill v2 dark editorial design system
+- Responsive CSS with direct-hash restoration
 - Vanilla JavaScript
 - Pointer-reactive canvas signal field
 - Interactive agent workflow simulator
-- Section-aware navigation and scroll progress
-- Magnetic CTAs, card tilt, orbit parallax, and booking dialog
+- Section-aware navigation and CSS scroll progress
+- Magnetic CTAs, Hermes artwork motion, and native booking dialog
 - Reduced-motion accessibility support
 - here.now and GitHub Pages deployment
 
